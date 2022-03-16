@@ -54,7 +54,8 @@ def test_evaluator(taskname, task_class):
             num_fewshot=0,
             limit=limit,
             bootstrap_iters=10,
-            description_dict=None
+            description_dict=None,
+            return_vals=True
     )
     e2 = evaluator.evaluate(
             lm=lm,
@@ -62,7 +63,8 @@ def test_evaluator(taskname, task_class):
             num_fewshot=0,
             limit=limit,
             bootstrap_iters=10,
-            description_dict=None
+            description_dict=None,
+            return_vals=True
     )
 
     # check that caching is working

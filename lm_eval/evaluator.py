@@ -14,7 +14,8 @@ from lm_eval.utils import positional_deprecated, run_task_tests
 def simple_evaluate(model, model_args=None, tasks=[],
                     num_fewshot=0, batch_size=None, device=None,
                     no_cache=False, limit=None, bootstrap_iters=100000,
-                    description_dict=None, check_integrity=False):
+                    description_dict=None, check_integrity=False,
+                    return_vals=False):
     """Instantiate and evaluate a model on a list of tasks.
 
     :param model: Union[str, LM]
@@ -61,7 +62,7 @@ def simple_evaluate(model, model_args=None, tasks=[],
         lm = lm_eval.base.CachingLM(
             lm, 'lm_cache/' + model + '_' + model_args.replace('=', '-').replace(',', '_').replace('/', '-') + '.db'
         )
-    
+
     task_dict = lm_eval.tasks.get_task_dict(tasks)
 
     if check_integrity:
@@ -72,7 +73,8 @@ def simple_evaluate(model, model_args=None, tasks=[],
         task_dict=task_dict,
         num_fewshot=num_fewshot,
         limit=limit,
-        description_dict=description_dict
+        description_dict=description_dict,
+        return_vals=return_vals
     )
 
     # add info about the model and few shot config
@@ -92,7 +94,9 @@ def simple_evaluate(model, model_args=None, tasks=[],
 
 
 @positional_deprecated
-def evaluate(lm, task_dict, provide_description=None, num_fewshot=0, limit=None, bootstrap_iters=100000, description_dict=None):
+def evaluate(lm, task_dict, provide_description=None, num_fewshot=0,
+             limit=None, bootstrap_iters=100000, description_dict=None,
+             return_vals=False):
     """Instantiate and evaluate a model on a list of tasks.
 
     :param lm: obj
@@ -193,7 +197,7 @@ def evaluate(lm, task_dict, provide_description=None, num_fewshot=0, limit=None,
 
         for resp, (i, task_name, doc, doc_id) in zip(resps, requests_origin[reqtype]):
             process_res_queue[(task_name, doc_id)].append((i, resp))
-    
+
     vals = collections.defaultdict(list)
 
     # unpack results and sort back in order and return control to Task
@@ -207,7 +211,7 @@ def evaluate(lm, task_dict, provide_description=None, num_fewshot=0, limit=None,
         metrics = task.process_results(doc, requests)
         for metric, value in metrics.items():
             vals[(task_name, metric)].append(value)
-    
+
     # aggregate results
     for (task_name, metric), items in vals.items():
         task = task_dict[task_name]
@@ -221,11 +225,17 @@ def evaluate(lm, task_dict, provide_description=None, num_fewshot=0, limit=None,
         )
         if stderr is not None:
             results[task_name][metric + "_stderr"] = stderr(items)
-    
-    return {
+
+    out = {
         "results": dict(results),
         "versions": dict(versions)
     }
+    if return_vals:
+        clean_vals = collections.defaultdict(dict)
+        for (task_name, metric), val in vals.items():
+            clean_vals[task_name][metric] = val
+        out["vals"] = clean_vals
+    return out
 
 
 def make_table(result_dict):
