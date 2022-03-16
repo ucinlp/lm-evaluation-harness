@@ -21,13 +21,14 @@ def parse_args():
     parser.add_argument('--no_cache', action="store_true")
     parser.add_argument('--description_dict_path', default=None)
     parser.add_argument('--check_integrity', action="store_true")
+    parser.add_argument('--return_vals', action="store_true")
     return parser.parse_args()
 
 
 def main():
     args = parse_args()
     assert not args.provide_description  # not implemented
-    
+
     if args.limit:
         print("WARNING: --limit SHOULD ONLY BE USED FOR TESTING. REAL METRICS SHOULD NOT BE COMPUTED USING LIMIT.")
 
@@ -51,11 +52,12 @@ def main():
         no_cache=args.no_cache,
         limit=args.limit,
         description_dict=description_dict,
-        check_integrity=args.check_integrity
+        check_integrity=args.check_integrity,
+        return_vals=args.return_vals,
     )
 
     dumped = json.dumps(results, indent=2)
-    
+
     print(dumped)
 
     if args.output_path:
