@@ -1,11 +1,11 @@
 import argparse
 import json
 import logging
+import os
 
 from lm_eval import tasks, evaluator
 
 logging.getLogger("openai").setLevel(logging.WARNING)
-
 
 def parse_args():
     parser = argparse.ArgumentParser()
@@ -22,6 +22,7 @@ def parse_args():
     parser.add_argument('--description_dict_path', default=None)
     parser.add_argument('--check_integrity', action="store_true")
     parser.add_argument('--return_vals', action="store_true")
+    parser.add_argument('--output_base_path', default='./results')
     return parser.parse_args()
 
 
@@ -57,8 +58,15 @@ def main():
     )
 
     dumped = json.dumps(results, indent=2)
-
     print(dumped)
+    # create a file for each task and put the output:
+    for task_name in task_names:
+        all_output = {"samples": results["samples"][task_name]}
+        for metric_name, output_list in results["vals"][task_name].items():
+            all_output[metric_name] = output_list
+        with open(os.path.join(args.output_base_path, f'{task_name}.json'), "w") as f:
+            json.dump(all_output, f)
+
 
     if args.output_path:
         with open(args.output_path, "w") as f:

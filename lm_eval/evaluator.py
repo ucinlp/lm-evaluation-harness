@@ -199,9 +199,11 @@ def evaluate(lm, task_dict, provide_description=None, num_fewshot=0,
             process_res_queue[(task_name, doc_id)].append((i, resp))
 
     vals = collections.defaultdict(list)
+    samples = collections.defaultdict(list)
 
     # unpack results and sort back in order and return control to Task
     for (task_name, doc_id), requests in process_res_queue.items():
+
         requests.sort(key=lambda x: x[0])
         requests = [x[1] for x in requests]
 
@@ -211,6 +213,9 @@ def evaluate(lm, task_dict, provide_description=None, num_fewshot=0,
         metrics = task.process_results(doc, requests)
         for metric, value in metrics.items():
             vals[(task_name, metric)].append(value)
+
+        #keep the samples for each task Yasasman check this!!
+        samples[task_name].append(doc["query"])
 
     # aggregate results
     for (task_name, metric), items in vals.items():
@@ -231,10 +236,16 @@ def evaluate(lm, task_dict, provide_description=None, num_fewshot=0,
         "versions": dict(versions)
     }
     if return_vals:
+        print("**************")
+        print(vals)
         clean_vals = collections.defaultdict(dict)
+        clean_sample = collections.defaultdict(dict)
         for (task_name, metric), val in vals.items():
             clean_vals[task_name][metric] = val
+        for task_name, sample in samples.items():
+            clean_sample[task_name]= sample
         out["vals"] = clean_vals
+        out["samples"] = clean_sample
     return out
 
 
